@@ -1,0 +1,13 @@
+[Unit]
+Description=Tari Golok API
+After=network.target
+
+[Service]
+User=www-data
+WorkingDirectory=/opt/tari-golok
+ExecStart=/opt/tari-golok/tari-golok
+EnvironmentFile=/opt/tari-golok/.env
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

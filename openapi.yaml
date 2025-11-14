@@ -1,0 +1,116 @@
+openapi: 3.0.3
+info:
+  title: Tari Golok API
+  version: 0.1.0
+servers:
+  - url: https://api.example.com
+paths:
+  /api/v1/auth/register:
+    post:
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+                name:
+                  type: string
+      responses:
+        '201':
+          description: Created
+  /api/v1/auth/login:
+    post:
+      summary: Login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: OK
+  /api/v1/videos:
+    get:
+      summary: List videos
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Create video (admin)
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                youtube_id:
+                  type: string
+                description:
+                  type: string
+      responses:
+        '201':
+          description: Created
+  /api/v1/submissions:
+    post:
+      summary: Create submission (user)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                link:
+                  type: string
+                note:
+                  type: string
+      responses:
+        '201':
+          description: Created
+    get:
+      summary: List submissions (admin sees all)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+  /api/v1/submissions/{id}/feedback:
+    post:
+      summary: Add feedback to submission (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                feedback:
+                  type: string
+      responses:
+        '200':
+          description: OK
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

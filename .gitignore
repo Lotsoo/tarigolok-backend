@@ -1,0 +1,5 @@
+/.env
+/tari-golok
+/bin/
+*.log
+*.sqlite
