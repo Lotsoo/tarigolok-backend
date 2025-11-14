@@ -70,6 +70,7 @@ func main() {
 
 		api.POST("/submissions", func(c *gin.Context) { CreateSubmissionHandler(c, db) })
 		api.GET("/submissions", AdminOrOwnerList(func(c *gin.Context) { ListSubmissionsHandler(c, db) }))
+		api.GET("/submissions/:id", AdminOnly(func(c *gin.Context) { GetSubmissionHandler(c, db) }))
 		api.POST("/submissions/:id/feedback", AdminOnly(func(c *gin.Context) { FeedbackHandler(c, db) }))
 	}
 

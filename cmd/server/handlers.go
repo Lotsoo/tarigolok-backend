@@ -238,6 +238,16 @@ func ListSubmissionsHandler(c *gin.Context, db *gorm.DB) {
 	c.JSON(http.StatusOK, subs)
 }
 
+func GetSubmissionHandler(c *gin.Context, db *gorm.DB) {
+	id := c.Param("id")
+	var sub Submission
+	if err := db.First(&sub, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "submission not found"})
+		return
+	}
+	c.JSON(http.StatusOK, sub)
+}
+
 type feedbackReq struct {
 	Feedback string `json:"feedback" binding:"required"`
 }
