@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -115,6 +116,12 @@ func CreateVideoHandler(c *gin.Context, db *gorm.DB) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	// normalize youtube id (accept full URL or bare id)
+	normalized := normalizeYoutubeID(req.YoutubeID)
+	if normalized == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid youtube_id"})
+		return
+	}
 	// get current user ID from context if available
 	createdBy, _ := c.Get("user_id")
 	var createdByID *string
@@ -123,7 +130,7 @@ func CreateVideoHandler(c *gin.Context, db *gorm.DB) {
 	}
 	video := Video{
 		Title:       req.Title,
-		YoutubeID:   req.YoutubeID,
+		YoutubeID:   normalized,
 		Description: req.Description,
 		CreatedByID: createdByID,
 	}
@@ -146,14 +153,32 @@ func UpdateVideoHandler(c *gin.Context, db *gorm.DB) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "video not found"})
 		return
 	}
+	// normalize youtube id before saving
+	normalized := normalizeYoutubeID(req.YoutubeID)
+	if normalized == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid youtube_id"})
+		return
+	}
 	video.Title = req.Title
-	video.YoutubeID = req.YoutubeID
+	video.YoutubeID = normalized
 	video.Description = req.Description
 	if err := db.Save(&video).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, video)
+}
+
+// normalize and extract a YouTube video id from a variety of inputs (full URL or id)
+func normalizeYoutubeID(input string) string {
+	s := strings.TrimSpace(input)
+	if s == "" {
+		return ""
+	}
+	// find first 11-character id-like substring
+	re := regexp.MustCompile(`[A-Za-z0-9_-]{11}`)
+	match := re.FindString(s)
+	return match
 }
 
 func DeleteVideoHandler(c *gin.Context, db *gorm.DB) {
