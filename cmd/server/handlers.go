@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 	"os"
 	"regexp"
@@ -240,9 +241,24 @@ func ListSubmissionsHandler(c *gin.Context, db *gorm.DB) {
 
 func GetSubmissionHandler(c *gin.Context, db *gorm.DB) {
 	id := c.Param("id")
+	roleRaw, _ := c.Get("role")
+	role, _ := roleRaw.(string)
+	uidRaw, _ := c.Get("user_id")
+	uid, _ := uidRaw.(string)
+	// Log request details for troubleshooting
+	// Note: uses standard library log via Printf to ensure visibility in server logs
+	// (avoid fmt to keep consistent logging behavior)
+	// Example output: GetSubmissionHandler id=<id> user=<uid> role=<role>
+	// This helps debug 404s by showing the requested id and caller identity.
+	log.Printf("GetSubmissionHandler id=%s user=%s role=%s", id, uid, role)
 	var sub Submission
 	if err := db.First(&sub, "id = ?", id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "submission not found"})
+		return
+	}
+	// Allow admins to view any submission; non-admins may only view their own
+	if role != "admin" && sub.UserID != uid {
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
 	}
 	c.JSON(http.StatusOK, sub)
