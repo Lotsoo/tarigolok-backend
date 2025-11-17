@@ -62,18 +62,18 @@ func (s *Submission) BeforeCreate(tx *gorm.DB) (err error) {
 }
 
 type Schedule struct {
-	ID        string    `gorm:"primaryKey;type:uuid" json:"id"`
-	Title     string    `gorm:"not null" json:"title"`
-	Date      string    `json:"date"`
-	Time      string    `json:"time"`
-	Location  string    `json:"location"`
-	Notes     string    `json:"notes"`
+	ID       string `gorm:"primaryKey;type:uuid" json:"id"`
+	Title    string `gorm:"not null" json:"title"`
+	Date     string `json:"date"`
+	Time     string `json:"time"`
+	Location string `json:"location"`
+	Notes    string `json:"notes"`
 	// Structured recurrence fields
 	Recurrence string    `json:"recurrence"`
 	Weekdays   string    `json:"weekdays"` // comma-separated days when recurrence == Mingguan
-	CreatedBy *string   `gorm:"type:uuid" json:"created_by"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	CreatedBy  *string   `gorm:"type:uuid" json:"created_by"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
 }
 
 func (s *Schedule) BeforeCreate(tx *gorm.DB) (err error) {

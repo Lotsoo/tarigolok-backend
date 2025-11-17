@@ -310,22 +310,22 @@ func FeedbackHandler(c *gin.Context, db *gorm.DB) {
 
 // Schedule handlers
 type createScheduleReq struct {
-	Title    string `json:"title" binding:"required"`
-	Date     string `json:"date"`
-	Time     string `json:"time"`
-	Location string `json:"location"`
-	Notes    string   `json:"notes"`
-	Recurrence string `json:"recurrence"`
+	Title      string   `json:"title" binding:"required"`
+	Date       string   `json:"date"`
+	Time       string   `json:"time"`
+	Location   string   `json:"location"`
+	Notes      string   `json:"notes"`
+	Recurrence string   `json:"recurrence"`
 	Weekdays   []string `json:"weekdays"`
 }
 
 type updateScheduleReq struct {
-	Title    string `json:"title" binding:"required"`
-	Date     string `json:"date"`
-	Time     string `json:"time"`
-	Location string `json:"location"`
-	Notes    string   `json:"notes"`
-	Recurrence string `json:"recurrence"`
+	Title      string   `json:"title" binding:"required"`
+	Date       string   `json:"date"`
+	Time       string   `json:"time"`
+	Location   string   `json:"location"`
+	Notes      string   `json:"notes"`
+	Recurrence string   `json:"recurrence"`
 	Weekdays   []string `json:"weekdays"`
 }
 
@@ -348,14 +348,14 @@ func ListSchedulesHandler(c *gin.Context, db *gorm.DB) {
 			}
 		}
 		out = append(out, gin.H{
-			"id": s.ID,
-			"title": s.Title,
-			"date": s.Date,
-			"time": s.Time,
-			"location": s.Location,
-			"notes": s.Notes,
+			"id":         s.ID,
+			"title":      s.Title,
+			"date":       s.Date,
+			"time":       s.Time,
+			"location":   s.Location,
+			"notes":      s.Notes,
 			"recurrence": s.Recurrence,
-			"weekdays": days,
+			"weekdays":   days,
 			"created_by": s.CreatedBy,
 			"created_at": s.CreatedAt,
 			"updated_at": s.UpdatedAt,
@@ -404,14 +404,14 @@ func CreateScheduleHandler(c *gin.Context, db *gorm.DB) {
 		}
 	}
 	resp := gin.H{
-		"id": sch.ID,
-		"title": sch.Title,
-		"date": sch.Date,
-		"time": sch.Time,
-		"location": sch.Location,
-		"notes": sch.Notes,
+		"id":         sch.ID,
+		"title":      sch.Title,
+		"date":       sch.Date,
+		"time":       sch.Time,
+		"location":   sch.Location,
+		"notes":      sch.Notes,
 		"recurrence": sch.Recurrence,
-		"weekdays": outDays,
+		"weekdays":   outDays,
 		"created_by": sch.CreatedBy,
 		"created_at": sch.CreatedAt,
 		"updated_at": sch.UpdatedAt,
@@ -456,14 +456,14 @@ func UpdateScheduleHandler(c *gin.Context, db *gorm.DB) {
 		}
 	}
 	resp := gin.H{
-		"id": sch.ID,
-		"title": sch.Title,
-		"date": sch.Date,
-		"time": sch.Time,
-		"location": sch.Location,
-		"notes": sch.Notes,
+		"id":         sch.ID,
+		"title":      sch.Title,
+		"date":       sch.Date,
+		"time":       sch.Time,
+		"location":   sch.Location,
+		"notes":      sch.Notes,
 		"recurrence": sch.Recurrence,
-		"weekdays": outDays,
+		"weekdays":   outDays,
 		"created_by": sch.CreatedBy,
 		"created_at": sch.CreatedAt,
 		"updated_at": sch.UpdatedAt,
