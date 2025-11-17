@@ -15,11 +15,9 @@ paths:
             schema:
               type: object
               properties:
-                email:
+                username:
                   type: string
                 password:
-                  type: string
-                name:
                   type: string
       responses:
         '201':
@@ -33,7 +31,7 @@ paths:
             schema:
               type: object
               properties:
-                email:
+                username:
                   type: string
                 password:
                   type: string

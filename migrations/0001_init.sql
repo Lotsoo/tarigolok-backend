@@ -3,15 +3,13 @@
 
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
-  email TEXT UNIQUE NOT NULL,
+  username TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
-  name TEXT,
   role TEXT NOT NULL DEFAULT 'user',
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 
 CREATE TABLE IF NOT EXISTS videos (
   id TEXT PRIMARY KEY,

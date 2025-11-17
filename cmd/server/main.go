@@ -181,9 +181,7 @@ func seedDefaultUsers(db *gorm.DB) error {
 		}
 		admin := User{
 			Username:     "admin",
-			Email:        "admin@example.com",
 			PasswordHash: string(hashed),
-			Name:         "Administrator",
 			Role:         "admin",
 		}
 		if err := db.Create(&admin).Error; err != nil {
@@ -204,9 +202,7 @@ func seedDefaultUsers(db *gorm.DB) error {
 		}
 		u := User{
 			Username:     "user",
-			Email:        "user@example.com",
 			PasswordHash: string(hashed),
-			Name:         "Regular User",
 			Role:         "user",
 		}
 		if err := db.Create(&u).Error; err != nil {

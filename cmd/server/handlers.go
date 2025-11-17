@@ -23,8 +23,6 @@ import (
 type registerReq struct {
 	Username string `json:"username" binding:"required,alphanum"`
 	Password string `json:"password" binding:"required,min=6"`
-	Name     string `json:"name"`
-	Email    string `json:"email" binding:"omitempty,email"`
 }
 
 type loginReq struct {
@@ -55,9 +53,7 @@ func RegisterHandler(c *gin.Context, db *gorm.DB) {
 
 	user := User{
 		Username:     strings.ToLower(req.Username),
-		Email:        strings.ToLower(req.Email),
 		PasswordHash: string(hashed),
-		Name:         req.Name,
 		Role:         "user",
 	}
 	if err := db.Create(&user).Error; err != nil {
@@ -65,7 +61,7 @@ func RegisterHandler(c *gin.Context, db *gorm.DB) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"user": gin.H{"id": user.ID, "username": user.Username, "email": user.Email, "name": user.Name}})
+	c.JSON(http.StatusCreated, gin.H{"user": gin.H{"id": user.ID, "username": user.Username, "role": user.Role}})
 }
 
 // LoginHandler authenticates user and returns JWT
@@ -90,7 +86,7 @@ func LoginHandler(c *gin.Context, db *gorm.DB) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate token"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"access_token": token, "user": gin.H{"id": user.ID, "username": user.Username, "email": user.Email, "role": user.Role}})
+	c.JSON(http.StatusOK, gin.H{"access_token": token, "user": gin.H{"id": user.ID, "username": user.Username, "role": user.Role}})
 }
 
 // MeHandler returns basic profile info for the authenticated user
@@ -102,8 +98,8 @@ func MeHandler(c *gin.Context, db *gorm.DB) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
 		return
 	}
-	// return non-sensitive fields only
-	c.JSON(http.StatusOK, gin.H{"id": user.ID, "username": user.Username, "email": user.Email, "name": user.Name, "role": user.Role})
+	// return non-sensitive fields only (no name/email stored anymore)
+	c.JSON(http.StatusOK, gin.H{"id": user.ID, "username": user.Username, "role": user.Role})
 }
 
 // Videos handlers

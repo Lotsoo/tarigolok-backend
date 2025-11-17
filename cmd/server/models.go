@@ -10,9 +10,7 @@ import (
 type User struct {
 	ID           string         `gorm:"primaryKey;type:uuid" json:"id"`
 	Username     string         `gorm:"uniqueIndex;not null" json:"username"`
-	Email        string         `gorm:"uniqueIndex" json:"email"`
 	PasswordHash string         `gorm:"not null" json:"-"`
-	Name         string         `json:"name"`
 	Role         string         `gorm:"type:text;default:'user'" json:"role"`
 	CreatedAt    time.Time      `json:"created_at"`
 	UpdatedAt    time.Time      `json:"updated_at"`
@@ -43,13 +41,13 @@ func (v *Video) BeforeCreate(tx *gorm.DB) (err error) {
 }
 
 type Submission struct {
-	ID        string    `gorm:"primaryKey;type:uuid" json:"id"`
-	UserID    string    `gorm:"type:uuid;not null;index" json:"user_id"`
-	Link      string    `gorm:"not null" json:"link"`
-	Note      string    `json:"note"`
-	Status    string    `gorm:"type:text;default:'pending'" json:"status"`
-	Feedback  string    `json:"feedback"`
-	AdminID   *string   `gorm:"type:uuid" json:"admin_id"`
+	ID       string  `gorm:"primaryKey;type:uuid" json:"id"`
+	UserID   string  `gorm:"type:uuid;not null;index" json:"user_id"`
+	Link     string  `gorm:"not null" json:"link"`
+	Note     string  `json:"note"`
+	Status   string  `gorm:"type:text;default:'pending'" json:"status"`
+	Feedback string  `json:"feedback"`
+	AdminID  *string `gorm:"type:uuid" json:"admin_id"`
 	// ReplyRead indicates whether the user has seen the admin's feedback
 	ReplyRead bool      `gorm:"default:false" json:"reply_read"`
 	CreatedAt time.Time `json:"created_at"`
