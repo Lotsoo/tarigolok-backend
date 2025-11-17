@@ -99,3 +99,21 @@ func (a *Archive) BeforeCreate(tx *gorm.DB) (err error) {
 	}
 	return nil
 }
+
+// Doc represents a documentation entry (Dokumentasi)
+type Doc struct {
+	ID          string    `gorm:"primaryKey;type:uuid" json:"id"`
+	Title       string    `gorm:"not null" json:"title"`
+	Description string    `json:"description"`
+	Link        string    `json:"link"` // optional external link or file URL
+	CreatedBy   *string   `gorm:"type:uuid" json:"created_by"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+func (d *Doc) BeforeCreate(tx *gorm.DB) (err error) {
+	if d.ID == "" {
+		d.ID = uuid.NewString()
+	}
+	return nil
+}

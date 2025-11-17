@@ -473,6 +473,83 @@ func DeleteArchiveHandler(c *gin.Context, db *gorm.DB) {
 
 }
 
+// Docs (Dokumentasi) handlers
+type createDocReq struct {
+	Title       string `json:"title" binding:"required"`
+	Description string `json:"description"`
+	Link        string `json:"link"`
+}
+
+type updateDocReq struct {
+	Title       string `json:"title" binding:"required"`
+	Description string `json:"description"`
+	Link        string `json:"link"`
+}
+
+func ListDocsHandler(c *gin.Context, db *gorm.DB) {
+	var list []Doc
+	if err := db.Order("created_at desc").Find(&list).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, list)
+}
+
+func CreateDocHandler(c *gin.Context, db *gorm.DB) {
+	var req createDocReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	createdByRaw, _ := c.Get("user_id")
+	var createdBy *string
+	if s, ok := createdByRaw.(string); ok {
+		createdBy = &s
+	}
+	d := Doc{
+		Title:       req.Title,
+		Description: req.Description,
+		Link:        req.Link,
+		CreatedBy:   createdBy,
+	}
+	if err := db.Create(&d).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, d)
+}
+
+func UpdateDocHandler(c *gin.Context, db *gorm.DB) {
+	id := c.Param("id")
+	var req updateDocReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	var d Doc
+	if err := db.First(&d, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "doc not found"})
+		return
+	}
+	d.Title = req.Title
+	d.Description = req.Description
+	d.Link = req.Link
+	if err := db.Save(&d).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, d)
+}
+
+func DeleteDocHandler(c *gin.Context, db *gorm.DB) {
+	id := c.Param("id")
+	if err := db.Delete(&Doc{}, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusNoContent, gin.H{})
+}
+
 type updateScheduleReq struct {
 	Title      string   `json:"title" binding:"required"`
 	Date       string   `json:"date"`
