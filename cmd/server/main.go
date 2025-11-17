@@ -74,11 +74,11 @@ func main() {
 		api.PUT("/schedules/:id", AdminOnly(func(c *gin.Context) { UpdateScheduleHandler(c, db) }))
 		api.DELETE("/schedules/:id", AdminOnly(func(c *gin.Context) { DeleteScheduleHandler(c, db) }))
 
-	// archive endpoints
-	api.GET("/archives", func(c *gin.Context) { ListArchivesHandler(c, db) })
-	api.POST("/archives", AdminOnly(func(c *gin.Context) { CreateArchiveHandler(c, db) }))
-	api.PUT("/archives/:id", AdminOnly(func(c *gin.Context) { UpdateArchiveHandler(c, db) }))
-	api.DELETE("/archives/:id", AdminOnly(func(c *gin.Context) { DeleteArchiveHandler(c, db) }))
+		// archive endpoints
+		api.GET("/archives", func(c *gin.Context) { ListArchivesHandler(c, db) })
+		api.POST("/archives", AdminOnly(func(c *gin.Context) { CreateArchiveHandler(c, db) }))
+		api.PUT("/archives/:id", AdminOnly(func(c *gin.Context) { UpdateArchiveHandler(c, db) }))
+		api.DELETE("/archives/:id", AdminOnly(func(c *gin.Context) { DeleteArchiveHandler(c, db) }))
 
 		api.POST("/submissions", func(c *gin.Context) { CreateSubmissionHandler(c, db) })
 		api.GET("/auth/me", func(c *gin.Context) { MeHandler(c, db) })
