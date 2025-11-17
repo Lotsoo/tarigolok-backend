@@ -68,6 +68,9 @@ type Schedule struct {
 	Time      string    `json:"time"`
 	Location  string    `json:"location"`
 	Notes     string    `json:"notes"`
+	// Structured recurrence fields
+	Recurrence string    `json:"recurrence"`
+	Weekdays   string    `json:"weekdays"` // comma-separated days when recurrence == Mingguan
 	CreatedBy *string   `gorm:"type:uuid" json:"created_by"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`

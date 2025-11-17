@@ -314,7 +314,9 @@ type createScheduleReq struct {
 	Date     string `json:"date"`
 	Time     string `json:"time"`
 	Location string `json:"location"`
-	Notes    string `json:"notes"`
+	Notes    string   `json:"notes"`
+	Recurrence string `json:"recurrence"`
+	Weekdays   []string `json:"weekdays"`
 }
 
 type updateScheduleReq struct {
@@ -322,7 +324,9 @@ type updateScheduleReq struct {
 	Date     string `json:"date"`
 	Time     string `json:"time"`
 	Location string `json:"location"`
-	Notes    string `json:"notes"`
+	Notes    string   `json:"notes"`
+	Recurrence string `json:"recurrence"`
+	Weekdays   []string `json:"weekdays"`
 }
 
 func ListSchedulesHandler(c *gin.Context, db *gorm.DB) {
@@ -331,7 +335,33 @@ func ListSchedulesHandler(c *gin.Context, db *gorm.DB) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, list)
+	// return weekdays as structured array for API consumers
+	out := make([]map[string]interface{}, 0, len(list))
+	for _, s := range list {
+		var days []string
+		if strings.TrimSpace(s.Weekdays) != "" {
+			parts := strings.Split(s.Weekdays, ",")
+			for _, p := range parts {
+				if t := strings.TrimSpace(p); t != "" {
+					days = append(days, t)
+				}
+			}
+		}
+		out = append(out, gin.H{
+			"id": s.ID,
+			"title": s.Title,
+			"date": s.Date,
+			"time": s.Time,
+			"location": s.Location,
+			"notes": s.Notes,
+			"recurrence": s.Recurrence,
+			"weekdays": days,
+			"created_by": s.CreatedBy,
+			"created_at": s.CreatedAt,
+			"updated_at": s.UpdatedAt,
+		})
+	}
+	c.JSON(http.StatusOK, out)
 }
 
 func CreateScheduleHandler(c *gin.Context, db *gorm.DB) {
@@ -345,19 +375,48 @@ func CreateScheduleHandler(c *gin.Context, db *gorm.DB) {
 	if s, ok := createdByRaw.(string); ok {
 		createdBy = &s
 	}
+	// persist weekdays as comma-separated string
+	weekdaysStr := ""
+	if len(req.Weekdays) > 0 {
+		weekdaysStr = strings.Join(req.Weekdays, ",")
+	}
 	sch := Schedule{
-		Title:     req.Title,
-		Date:      req.Date,
-		Time:      req.Time,
-		Location:  req.Location,
-		Notes:     req.Notes,
-		CreatedBy: createdBy,
+		Title:      req.Title,
+		Date:       req.Date,
+		Time:       req.Time,
+		Location:   req.Location,
+		Notes:      req.Notes,
+		Recurrence: req.Recurrence,
+		Weekdays:   weekdaysStr,
+		CreatedBy:  createdBy,
 	}
 	if err := db.Create(&sch).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, sch)
+	// return structured response (weekdays as array)
+	var outDays []string
+	if strings.TrimSpace(sch.Weekdays) != "" {
+		for _, p := range strings.Split(sch.Weekdays, ",") {
+			if t := strings.TrimSpace(p); t != "" {
+				outDays = append(outDays, t)
+			}
+		}
+	}
+	resp := gin.H{
+		"id": sch.ID,
+		"title": sch.Title,
+		"date": sch.Date,
+		"time": sch.Time,
+		"location": sch.Location,
+		"notes": sch.Notes,
+		"recurrence": sch.Recurrence,
+		"weekdays": outDays,
+		"created_by": sch.CreatedBy,
+		"created_at": sch.CreatedAt,
+		"updated_at": sch.UpdatedAt,
+	}
+	c.JSON(http.StatusCreated, resp)
 }
 
 func UpdateScheduleHandler(c *gin.Context, db *gorm.DB) {
@@ -377,11 +436,39 @@ func UpdateScheduleHandler(c *gin.Context, db *gorm.DB) {
 	sch.Time = req.Time
 	sch.Location = req.Location
 	sch.Notes = req.Notes
+	sch.Recurrence = req.Recurrence
+	if len(req.Weekdays) > 0 {
+		sch.Weekdays = strings.Join(req.Weekdays, ",")
+	} else {
+		sch.Weekdays = ""
+	}
 	if err := db.Save(&sch).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, sch)
+	// build structured response
+	var outDays []string
+	if strings.TrimSpace(sch.Weekdays) != "" {
+		for _, p := range strings.Split(sch.Weekdays, ",") {
+			if t := strings.TrimSpace(p); t != "" {
+				outDays = append(outDays, t)
+			}
+		}
+	}
+	resp := gin.H{
+		"id": sch.ID,
+		"title": sch.Title,
+		"date": sch.Date,
+		"time": sch.Time,
+		"location": sch.Location,
+		"notes": sch.Notes,
+		"recurrence": sch.Recurrence,
+		"weekdays": outDays,
+		"created_by": sch.CreatedBy,
+		"created_at": sch.CreatedAt,
+		"updated_at": sch.UpdatedAt,
+	}
+	c.JSON(http.StatusOK, resp)
 }
 
 func DeleteScheduleHandler(c *gin.Context, db *gorm.DB) {
