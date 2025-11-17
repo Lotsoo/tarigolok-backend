@@ -89,6 +89,19 @@ func LoginHandler(c *gin.Context, db *gorm.DB) {
 	c.JSON(http.StatusOK, gin.H{"access_token": token, "user": gin.H{"id": user.ID, "username": user.Username, "email": user.Email, "role": user.Role}})
 }
 
+// MeHandler returns basic profile info for the authenticated user
+func MeHandler(c *gin.Context, db *gorm.DB) {
+	uidRaw, _ := c.Get("user_id")
+	uid, _ := uidRaw.(string)
+	var user User
+	if err := db.First(&user, "id = ?", uid).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+	// return non-sensitive fields only
+	c.JSON(http.StatusOK, gin.H{"id": user.ID, "username": user.Username, "email": user.Email, "name": user.Name, "role": user.Role})
+}
+
 // Videos handlers
 type createVideoReq struct {
 	Title       string `json:"title" binding:"required"`
@@ -293,6 +306,91 @@ func FeedbackHandler(c *gin.Context, db *gorm.DB) {
 		return
 	}
 	c.JSON(http.StatusOK, sub)
+}
+
+// Schedule handlers
+type createScheduleReq struct {
+	Title    string `json:"title" binding:"required"`
+	Date     string `json:"date"`
+	Time     string `json:"time"`
+	Location string `json:"location"`
+	Notes    string `json:"notes"`
+}
+
+type updateScheduleReq struct {
+	Title    string `json:"title" binding:"required"`
+	Date     string `json:"date"`
+	Time     string `json:"time"`
+	Location string `json:"location"`
+	Notes    string `json:"notes"`
+}
+
+func ListSchedulesHandler(c *gin.Context, db *gorm.DB) {
+	var list []Schedule
+	if err := db.Order("created_at desc").Find(&list).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, list)
+}
+
+func CreateScheduleHandler(c *gin.Context, db *gorm.DB) {
+	var req createScheduleReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	createdByRaw, _ := c.Get("user_id")
+	var createdBy *string
+	if s, ok := createdByRaw.(string); ok {
+		createdBy = &s
+	}
+	sch := Schedule{
+		Title:     req.Title,
+		Date:      req.Date,
+		Time:      req.Time,
+		Location:  req.Location,
+		Notes:     req.Notes,
+		CreatedBy: createdBy,
+	}
+	if err := db.Create(&sch).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, sch)
+}
+
+func UpdateScheduleHandler(c *gin.Context, db *gorm.DB) {
+	id := c.Param("id")
+	var req updateScheduleReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	var sch Schedule
+	if err := db.First(&sch, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "schedule not found"})
+		return
+	}
+	sch.Title = req.Title
+	sch.Date = req.Date
+	sch.Time = req.Time
+	sch.Location = req.Location
+	sch.Notes = req.Notes
+	if err := db.Save(&sch).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, sch)
+}
+
+func DeleteScheduleHandler(c *gin.Context, db *gorm.DB) {
+	id := c.Param("id")
+	if err := db.Delete(&Schedule{}, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusNoContent, gin.H{})
 }
 
 // Helper wrapper types

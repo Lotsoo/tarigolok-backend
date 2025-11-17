@@ -60,3 +60,22 @@ func (s *Submission) BeforeCreate(tx *gorm.DB) (err error) {
 	}
 	return nil
 }
+
+type Schedule struct {
+	ID        string    `gorm:"primaryKey;type:uuid" json:"id"`
+	Title     string    `gorm:"not null" json:"title"`
+	Date      string    `json:"date"`
+	Time      string    `json:"time"`
+	Location  string    `json:"location"`
+	Notes     string    `json:"notes"`
+	CreatedBy *string   `gorm:"type:uuid" json:"created_by"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func (s *Schedule) BeforeCreate(tx *gorm.DB) (err error) {
+	if s.ID == "" {
+		s.ID = uuid.NewString()
+	}
+	return nil
+}
