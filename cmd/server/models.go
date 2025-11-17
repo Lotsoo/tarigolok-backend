@@ -117,3 +117,20 @@ func (d *Doc) BeforeCreate(tx *gorm.DB) (err error) {
 	}
 	return nil
 }
+
+// SubmissionMessage represents a single message in a submission conversation.
+type SubmissionMessage struct {
+	ID           string    `gorm:"primaryKey;type:uuid" json:"id"`
+	SubmissionID string    `gorm:"type:uuid;index;not null" json:"submission_id"`
+	SenderID     string    `gorm:"type:uuid;not null" json:"sender_id"`
+	SenderRole   string    `gorm:"type:text;not null" json:"sender_role"` // 'admin' or 'user'
+	Message      string    `gorm:"type:text;not null" json:"message"`
+	CreatedAt    time.Time `json:"created_at"`
+}
+
+func (m *SubmissionMessage) BeforeCreate(tx *gorm.DB) (err error) {
+	if m.ID == "" {
+		m.ID = uuid.NewString()
+	}
+	return nil
+}

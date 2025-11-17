@@ -346,6 +346,100 @@ func GetSubmissionHandler(c *gin.Context, db *gorm.DB) {
 	})
 }
 
+// CreateSubmissionMessageHandler allows the submission owner or an admin to post a message
+// into the submission's conversation thread. When an admin posts a message the submission
+// status will be set to 'replied' and ReplyRead will be set to false so the owner sees it.
+func CreateSubmissionMessageHandler(c *gin.Context, db *gorm.DB) {
+	id := c.Param("id")
+	var req feedbackReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	// find submission
+	var sub Submission
+	if err := db.First(&sub, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "submission not found"})
+		return
+	}
+	callerRaw, _ := c.Get("user_id")
+	caller, _ := callerRaw.(string)
+	roleRaw, _ := c.Get("role")
+	role, _ := roleRaw.(string)
+
+	// only admin or owner can post messages
+	if role != "admin" && sub.UserID != caller {
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+		return
+	}
+
+	msg := SubmissionMessage{
+		SubmissionID: sub.ID,
+		SenderID:     caller,
+		SenderRole:   role,
+		Message:      req.Feedback,
+		CreatedAt:    time.Now(),
+	}
+	if err := db.Create(&msg).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// If the sender is admin, mark the submission as replied and unread for owner.
+	if role == "admin" {
+		sub.Status = "replied"
+		sub.AdminID = &caller
+		sub.ReplyRead = false
+		sub.UpdatedAt = time.Now()
+		if err := db.Save(&sub).Error; err != nil {
+			// log but do not fail the message creation
+			log.Printf("failed to update submission after admin message id=%s err=%v", sub.ID, err)
+		}
+	}
+
+	c.JSON(http.StatusCreated, msg)
+}
+
+// ListSubmissionMessagesHandler returns the conversation messages for a submission.
+// Only the submission owner or admin may fetch the messages.
+func ListSubmissionMessagesHandler(c *gin.Context, db *gorm.DB) {
+	id := c.Param("id")
+	roleRaw, _ := c.Get("role")
+	role, _ := roleRaw.(string)
+	uidRaw, _ := c.Get("user_id")
+	uid, _ := uidRaw.(string)
+
+	var sub Submission
+	if err := db.First(&sub, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "submission not found"})
+		return
+	}
+	if role != "admin" && sub.UserID != uid {
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+		return
+	}
+
+	var msgs []SubmissionMessage
+	if err := db.Where("submission_id = ?", id).Order("created_at asc").Find(&msgs).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// return messages as array
+	out := make([]map[string]interface{}, 0, len(msgs))
+	for _, m := range msgs {
+		out = append(out, gin.H{
+			"id":            m.ID,
+			"submission_id": m.SubmissionID,
+			"sender_id":     m.SenderID,
+			"sender_role":   m.SenderRole,
+			"message":       m.Message,
+			"created_at":    m.CreatedAt,
+		})
+	}
+	c.JSON(http.StatusOK, out)
+}
+
 type feedbackReq struct {
 	Feedback string `json:"feedback" binding:"required"`
 }

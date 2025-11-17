@@ -44,7 +44,7 @@ func main() {
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	// Auto migrate models (for quick start). Replace with migration tool for production.
-	if err := db.AutoMigrate(&User{}, &Video{}, &Submission{}, &Schedule{}, &Archive{}, &Doc{}); err != nil {
+	if err := db.AutoMigrate(&User{}, &Video{}, &Submission{}, &Schedule{}, &Archive{}, &Doc{}, &SubmissionMessage{}); err != nil {
 		log.Fatalf("AutoMigrate error: %v", err)
 	}
 
@@ -101,6 +101,9 @@ func main() {
 		api.GET("/submissions", AdminOrOwnerList(func(c *gin.Context) { ListSubmissionsHandler(c, db) }))
 		api.GET("/submissions/:id", func(c *gin.Context) { GetSubmissionHandler(c, db) })
 		api.POST("/submissions/:id/feedback", AdminOnly(func(c *gin.Context) { FeedbackHandler(c, db) }))
+		// message endpoints: owner or admin can post and read conversation messages
+		api.POST("/submissions/:id/messages", func(c *gin.Context) { CreateSubmissionMessageHandler(c, db) })
+		api.GET("/submissions/:id/messages", func(c *gin.Context) { ListSubmissionMessagesHandler(c, db) })
 	}
 
 	port := os.Getenv("PORT")
