@@ -367,9 +367,13 @@ func CreateSubmissionMessageHandler(c *gin.Context, db *gorm.DB) {
 	roleRaw, _ := c.Get("role")
 	role, _ := roleRaw.(string)
 
+	// log caller and submission owner for debugging authorization issues
+	log.Printf("CreateSubmissionMessageHandler submission_id=%s caller=%s role=%s submission_user=%s", id, caller, role, sub.UserID)
+
 	// only admin or owner can post messages
 	if role != "admin" && sub.UserID != caller {
-		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+		// include a small hint in the response to help client-side debugging (non-sensitive)
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden", "hint": "caller is not admin and not the submission owner"})
 		return
 	}
 
