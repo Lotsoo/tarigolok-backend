@@ -85,16 +85,16 @@ func main() {
 		api.DELETE("/schedules/:id", AdminOnly(func(c *gin.Context) { DeleteScheduleHandler(c, db) }))
 
 		// archive endpoints
-	api.GET("/archives", func(c *gin.Context) { ListArchivesHandler(c, db) })
-	api.POST("/archives", AdminOnly(func(c *gin.Context) { CreateArchiveHandler(c, db) }))
-	api.PUT("/archives/:id", AdminOnly(func(c *gin.Context) { UpdateArchiveHandler(c, db) }))
-	api.DELETE("/archives/:id", AdminOnly(func(c *gin.Context) { DeleteArchiveHandler(c, db) }))
+		api.GET("/archives", func(c *gin.Context) { ListArchivesHandler(c, db) })
+		api.POST("/archives", AdminOnly(func(c *gin.Context) { CreateArchiveHandler(c, db) }))
+		api.PUT("/archives/:id", AdminOnly(func(c *gin.Context) { UpdateArchiveHandler(c, db) }))
+		api.DELETE("/archives/:id", AdminOnly(func(c *gin.Context) { DeleteArchiveHandler(c, db) }))
 
-	// docs endpoints (Dokumentasi)
-	api.GET("/docs", func(c *gin.Context) { ListDocsHandler(c, db) })
-	api.POST("/docs", AdminOnly(func(c *gin.Context) { CreateDocHandler(c, db) }))
-	api.PUT("/docs/:id", AdminOnly(func(c *gin.Context) { UpdateDocHandler(c, db) }))
-	api.DELETE("/docs/:id", AdminOnly(func(c *gin.Context) { DeleteDocHandler(c, db) }))
+		// docs endpoints (Dokumentasi)
+		api.GET("/docs", func(c *gin.Context) { ListDocsHandler(c, db) })
+		api.POST("/docs", AdminOnly(func(c *gin.Context) { CreateDocHandler(c, db) }))
+		api.PUT("/docs/:id", AdminOnly(func(c *gin.Context) { UpdateDocHandler(c, db) }))
+		api.DELETE("/docs/:id", AdminOnly(func(c *gin.Context) { DeleteDocHandler(c, db) }))
 
 		api.POST("/submissions", func(c *gin.Context) { CreateSubmissionHandler(c, db) })
 		api.GET("/auth/me", func(c *gin.Context) { MeHandler(c, db) })
