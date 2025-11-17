@@ -82,3 +82,20 @@ func (s *Schedule) BeforeCreate(tx *gorm.DB) (err error) {
 	}
 	return nil
 }
+
+type Archive struct {
+	ID        string    `gorm:"primaryKey;type:uuid" json:"id"`
+	Title     string    `gorm:"not null" json:"title"`
+	Description string  `json:"description"`
+	MediaURL  string    `json:"media_url"`
+	CreatedBy *string   `gorm:"type:uuid" json:"created_by"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func (a *Archive) BeforeCreate(tx *gorm.DB) (err error) {
+	if a.ID == "" {
+		a.ID = uuid.NewString()
+	}
+	return nil
+}

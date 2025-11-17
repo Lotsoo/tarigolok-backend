@@ -44,7 +44,7 @@ func main() {
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	// Auto migrate models (for quick start). Replace with migration tool for production.
-	if err := db.AutoMigrate(&User{}, &Video{}, &Submission{}, &Schedule{}); err != nil {
+	if err := db.AutoMigrate(&User{}, &Video{}, &Submission{}, &Schedule{}, &Archive{}); err != nil {
 		log.Fatalf("AutoMigrate error: %v", err)
 	}
 
@@ -73,6 +73,12 @@ func main() {
 		api.POST("/schedules", AdminOnly(func(c *gin.Context) { CreateScheduleHandler(c, db) }))
 		api.PUT("/schedules/:id", AdminOnly(func(c *gin.Context) { UpdateScheduleHandler(c, db) }))
 		api.DELETE("/schedules/:id", AdminOnly(func(c *gin.Context) { DeleteScheduleHandler(c, db) }))
+
+	// archive endpoints
+	api.GET("/archives", func(c *gin.Context) { ListArchivesHandler(c, db) })
+	api.POST("/archives", AdminOnly(func(c *gin.Context) { CreateArchiveHandler(c, db) }))
+	api.PUT("/archives/:id", AdminOnly(func(c *gin.Context) { UpdateArchiveHandler(c, db) }))
+	api.DELETE("/archives/:id", AdminOnly(func(c *gin.Context) { DeleteArchiveHandler(c, db) }))
 
 		api.POST("/submissions", func(c *gin.Context) { CreateSubmissionHandler(c, db) })
 		api.GET("/auth/me", func(c *gin.Context) { MeHandler(c, db) })

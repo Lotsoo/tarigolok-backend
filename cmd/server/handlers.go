@@ -319,6 +319,84 @@ type createScheduleReq struct {
 	Weekdays   []string `json:"weekdays"`
 }
 
+// Archive handlers
+type createArchiveReq struct {
+	Title       string `json:"title" binding:"required"`
+	Description string `json:"description"`
+	MediaURL    string `json:"media_url"`
+}
+
+type updateArchiveReq struct {
+	Title       string `json:"title" binding:"required"`
+	Description string `json:"description"`
+	MediaURL    string `json:"media_url"`
+}
+
+func ListArchivesHandler(c *gin.Context, db *gorm.DB) {
+	var list []Archive
+	if err := db.Order("created_at desc").Find(&list).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, list)
+}
+
+func CreateArchiveHandler(c *gin.Context, db *gorm.DB) {
+	var req createArchiveReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	createdByRaw, _ := c.Get("user_id")
+	var createdBy *string
+	if s, ok := createdByRaw.(string); ok {
+		createdBy = &s
+	}
+	a := Archive{
+		Title:       req.Title,
+		Description: req.Description,
+		MediaURL:    req.MediaURL,
+		CreatedBy:   createdBy,
+	}
+	if err := db.Create(&a).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, a)
+}
+
+func UpdateArchiveHandler(c *gin.Context, db *gorm.DB) {
+	id := c.Param("id")
+	var req updateArchiveReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	var a Archive
+	if err := db.First(&a, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "archive not found"})
+		return
+	}
+	a.Title = req.Title
+	a.Description = req.Description
+	a.MediaURL = req.MediaURL
+	if err := db.Save(&a).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, a)
+}
+
+func DeleteArchiveHandler(c *gin.Context, db *gorm.DB) {
+	id := c.Param("id")
+	if err := db.Delete(&Archive{}, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusNoContent, gin.H{})
+
+}
+
 type updateScheduleReq struct {
 	Title      string   `json:"title" binding:"required"`
 	Date       string   `json:"date"`
