@@ -2,8 +2,11 @@ package main
 
 import (
 	"log"
+	"mime/multipart"
 	"net/http"
 	"os"
+	"path/filepath"
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -11,6 +14,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -342,20 +346,41 @@ func ListArchivesHandler(c *gin.Context, db *gorm.DB) {
 }
 
 func CreateArchiveHandler(c *gin.Context, db *gorm.DB) {
-	var req createArchiveReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+	// Support both JSON body (media_url) and multipart/form-data (file upload)
+	var title, description, mediaURL string
+	// try multipart first
+	file, err := c.FormFile("file")
+	if err == nil && file != nil {
+		// Save uploaded file
+	savedURL, saveErr := saveUploadedFile(c, file)
+		if saveErr != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": saveErr.Error()})
+			return
+		}
+		mediaURL = savedURL
+		title = c.PostForm("title")
+		description = c.PostForm("description")
+	} else {
+		// fallback to JSON
+		var req createArchiveReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		title = req.Title
+		description = req.Description
+		mediaURL = req.MediaURL
 	}
+
 	createdByRaw, _ := c.Get("user_id")
 	var createdBy *string
 	if s, ok := createdByRaw.(string); ok {
 		createdBy = &s
 	}
 	a := Archive{
-		Title:       req.Title,
-		Description: req.Description,
-		MediaURL:    req.MediaURL,
+		Title:       title,
+		Description: description,
+		MediaURL:    mediaURL,
 		CreatedBy:   createdBy,
 	}
 	if err := db.Create(&a).Error; err != nil {
@@ -367,24 +392,75 @@ func CreateArchiveHandler(c *gin.Context, db *gorm.DB) {
 
 func UpdateArchiveHandler(c *gin.Context, db *gorm.DB) {
 	id := c.Param("id")
-	var req updateArchiveReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+	// Support multipart upload or JSON update
+	var title, description, mediaURL string
+	// try multipart
+	file, err := c.FormFile("file")
+	if err == nil && file != nil {
+	savedURL, saveErr := saveUploadedFile(c, file)
+		if saveErr != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": saveErr.Error()})
+			return
+		}
+		mediaURL = savedURL
+		title = c.PostForm("title")
+		description = c.PostForm("description")
+	} else {
+		var req updateArchiveReq
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		title = req.Title
+		description = req.Description
+		mediaURL = req.MediaURL
 	}
+
 	var a Archive
 	if err := db.First(&a, "id = ?", id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "archive not found"})
 		return
 	}
-	a.Title = req.Title
-	a.Description = req.Description
-	a.MediaURL = req.MediaURL
+	a.Title = title
+	a.Description = description
+	if mediaURL != "" {
+		a.MediaURL = mediaURL
+	}
 	if err := db.Save(&a).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, a)
+}
+
+// saveUploadedFile saves the uploaded file to the configured upload directory and returns the public URL path
+func saveUploadedFile(c *gin.Context, fh *multipart.FileHeader) (string, error) {
+	uploadDir := os.Getenv("UPLOAD_DIR")
+	if uploadDir == "" {
+		uploadDir = "./uploads"
+	}
+	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		return "", err
+	}
+	// simple extension whitelist
+	ext := strings.ToLower(filepath.Ext(fh.Filename))
+	allowed := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".gif": true, ".pdf": true, ".mp4": true}
+	if !allowed[ext] {
+		return "", fmt.Errorf("file type not allowed: %s", ext)
+	}
+	// generate unique filename
+	fname := uuid.NewString() + ext
+	dst := filepath.Join(uploadDir, fname)
+	if err := c.SaveUploadedFile(fh, dst); err != nil {
+		return "", err
+	}
+	// return public absolute URL; main.go serves uploadDir at /uploads
+	scheme := "http"
+	if c.Request.TLS != nil {
+		scheme = "https"
+	}
+	host := c.Request.Host
+	return fmt.Sprintf("%s://%s/uploads/%s", scheme, host, fname), nil
 }
 
 func DeleteArchiveHandler(c *gin.Context, db *gorm.DB) {

@@ -55,6 +55,16 @@ func main() {
 
 	r := gin.Default()
 
+	// ensure upload directory exists and serve it at /uploads
+	uploadDir := os.Getenv("UPLOAD_DIR")
+	if uploadDir == "" {
+		uploadDir = "./uploads"
+	}
+	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		log.Fatalf("failed to create upload dir: %v", err)
+	}
+	r.Static("/uploads", uploadDir)
+
 	// public
 	r.POST("/api/v1/auth/register", func(c *gin.Context) { RegisterHandler(c, db) })
 	r.POST("/api/v1/auth/login", func(c *gin.Context) { LoginHandler(c, db) })
