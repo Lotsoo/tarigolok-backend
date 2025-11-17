@@ -278,6 +278,17 @@ func GetSubmissionHandler(c *gin.Context, db *gorm.DB) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 		return
 	}
+	// If the caller is the submission owner (non-admin) and there is a reply
+	// mark the reply as read so the user will see it as acknowledged.
+	if role != "admin" && sub.UserID == uid {
+		if sub.Status == "replied" && !sub.ReplyRead {
+			sub.ReplyRead = true
+			// best-effort save; ignore save error for the response but log it
+			if err := db.Save(&sub).Error; err != nil {
+				log.Printf("failed to mark submission reply as read id=%s user=%s err=%v", id, uid, err)
+			}
+		}
+	}
 	c.JSON(http.StatusOK, sub)
 }
 
@@ -304,6 +315,8 @@ func FeedbackHandler(c *gin.Context, db *gorm.DB) {
 	sub.Feedback = req.Feedback
 	sub.Status = "replied"
 	sub.AdminID = &adminID
+	// Mark as unread for the user (they have not seen the feedback yet)
+	sub.ReplyRead = false
 	sub.UpdatedAt = time.Now()
 	if err := db.Save(&sub).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

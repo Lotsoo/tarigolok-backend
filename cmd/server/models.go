@@ -50,6 +50,8 @@ type Submission struct {
 	Status    string    `gorm:"type:text;default:'pending'" json:"status"`
 	Feedback  string    `json:"feedback"`
 	AdminID   *string   `gorm:"type:uuid" json:"admin_id"`
+	// ReplyRead indicates whether the user has seen the admin's feedback
+	ReplyRead bool      `gorm:"default:false" json:"reply_read"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
