@@ -249,7 +249,45 @@ func ListSubmissionsHandler(c *gin.Context, db *gorm.DB) {
 			return
 		}
 	}
-	c.JSON(http.StatusOK, subs)
+
+	// fetch usernames for the returned submissions so the client can show a human-friendly "from" field
+	userIDs := make([]string, 0, len(subs))
+	idSet := make(map[string]struct{})
+	for _, s := range subs {
+		if _, ok := idSet[s.UserID]; !ok {
+			idSet[s.UserID] = struct{}{}
+			userIDs = append(userIDs, s.UserID)
+		}
+	}
+	users := make([]User, 0)
+	if len(userIDs) > 0 {
+		if err := db.Where("id IN ?", userIDs).Find(&users).Error; err != nil {
+			// if user lookup fails, still return submissions without usernames
+			log.Printf("failed to load submission users: %v", err)
+		}
+	}
+	userMap := make(map[string]string, len(users))
+	for _, u := range users {
+		userMap[u.ID] = u.Username
+	}
+
+	out := make([]map[string]interface{}, 0, len(subs))
+	for _, s := range subs {
+		out = append(out, gin.H{
+			"id":         s.ID,
+			"user_id":    s.UserID,
+			"username":   userMap[s.UserID],
+			"link":       s.Link,
+			"note":       s.Note,
+			"status":     s.Status,
+			"feedback":   s.Feedback,
+			"admin_id":   s.AdminID,
+			"reply_read": s.ReplyRead,
+			"created_at": s.CreatedAt,
+			"updated_at": s.UpdatedAt,
+		})
+	}
+	c.JSON(http.StatusOK, out)
 }
 
 func GetSubmissionHandler(c *gin.Context, db *gorm.DB) {
@@ -285,7 +323,27 @@ func GetSubmissionHandler(c *gin.Context, db *gorm.DB) {
 			}
 		}
 	}
-	c.JSON(http.StatusOK, sub)
+
+	// include username so clients can show a friendly "from" value
+	var user User
+	username := ""
+	if err := db.First(&user, "id = ?", sub.UserID).Error; err == nil {
+		username = user.Username
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"id":         sub.ID,
+		"user_id":    sub.UserID,
+		"username":   username,
+		"link":       sub.Link,
+		"note":       sub.Note,
+		"status":     sub.Status,
+		"feedback":   sub.Feedback,
+		"admin_id":   sub.AdminID,
+		"reply_read": sub.ReplyRead,
+		"created_at": sub.CreatedAt,
+		"updated_at": sub.UpdatedAt,
+	})
 }
 
 type feedbackReq struct {
