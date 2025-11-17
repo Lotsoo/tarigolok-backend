@@ -1,12 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
-	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -352,7 +352,7 @@ func CreateArchiveHandler(c *gin.Context, db *gorm.DB) {
 	file, err := c.FormFile("file")
 	if err == nil && file != nil {
 		// Save uploaded file
-	savedURL, saveErr := saveUploadedFile(c, file)
+		savedURL, saveErr := saveUploadedFile(c, file)
 		if saveErr != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": saveErr.Error()})
 			return
@@ -397,7 +397,7 @@ func UpdateArchiveHandler(c *gin.Context, db *gorm.DB) {
 	// try multipart
 	file, err := c.FormFile("file")
 	if err == nil && file != nil {
-	savedURL, saveErr := saveUploadedFile(c, file)
+		savedURL, saveErr := saveUploadedFile(c, file)
 		if saveErr != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": saveErr.Error()})
 			return
